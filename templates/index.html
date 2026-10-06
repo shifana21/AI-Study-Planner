@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI Study Planner</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>📚 AI Study Planner</h1>
+
+    <p class="subtitle">
+        Your personal AI-powered study planner
+    </p>
+
+
+    <!-- STUDY PLAN FORM -->
+
+    <form method="POST">
+
+        <label for="subjects">
+            Subjects
+        </label>
+
+        <input
+            type="text"
+            id="subjects"
+            name="subjects"
+            placeholder="Java, DBMS, Python"
+            required
+        >
+
+
+        <label for="exam_date">
+            Exam Date
+        </label>
+
+        <input
+            type="date"
+            id="exam_date"
+            name="exam_date"
+            required
+        >
+
+
+        <label for="daily_hours">
+            Daily Study Hours
+        </label>
+
+        <input
+            type="number"
+            id="daily_hours"
+            name="daily_hours"
+            min="1"
+            max="12"
+            placeholder="3"
+            required
+        >
+
+
+        <label for="level">
+            Current Level
+        </label>
+
+        <select
+            id="level"
+            name="level"
+            required
+        >
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+        </select>
+
+
+        <label for="weak_subjects">
+            Weak Subjects (Optional)
+        </label>
+
+        <input
+            type="text"
+            id="weak_subjects"
+            name="weak_subjects"
+            placeholder="Example: Java, DBMS"
+        >
+
+
+        <label for="strong_subjects">
+            Strong Subjects (Optional)
+        </label>
+
+        <input
+            type="text"
+            id="strong_subjects"
+            name="strong_subjects"
+            placeholder="Example: Python"
+        >
+
+
+        <label for="study_preference">
+            Study Preference
+        </label>
+
+        <select
+            id="study_preference"
+            name="study_preference"
+            required
+        >
+            <option value="Mixed" selected>Mixed</option>
+            <option value="Theory">Theory</option>
+            <option value="Coding / Practice">Coding / Practice</option>
+            <option value="Revision">Revision</option>
+        </select>
+
+
+        <button type="submit">
+            ✨ Generate Study Plan
+        </button>
+
+    </form>
+
+
+    <!-- STUDY DASHBOARD -->
+
+    {% if plan %}
+
+    <div class="dashboard-section">
+
+        <div class="dashboard-header">
+            <h2>📚 My Study Dashboard</h2>
+            <p class="dashboard-subtitle">Your personalized AI-powered study plan</p>
+            <span class="ai-badge">🤖 AI Personalized</span>
+        </div>
+
+        <div class="dashboard-grid">
+
+            <!-- Exam Countdown -->
+            <div class="dashboard-card countdown-card">
+                <div class="card-icon">⏳</div>
+                <h3>Exam Countdown</h3>
+                <div class="countdown-number" id="countdown-days">--</div>
+                <p class="countdown-label">Days Remaining</p>
+                <p class="exam-date-label">Exam Date: <span id="dashboard-exam-date">{{ form_data.exam_date }}</span></p>
+            </div>
+
+            <!-- Today's Task -->
+            <div class="dashboard-card today-task-card">
+                <div class="card-icon">⭐</div>
+                <h3>Today's Task</h3>
+                <div id="today-task-content">
+                    <p class="no-task-message">No study task scheduled for today.</p>
+                </div>
+            </div>
+
+            <!-- Overall Progress -->
+            <div class="dashboard-card progress-card">
+                <div class="card-icon">📊</div>
+                <h3>Overall Progress</h3>
+                <div class="progress-percentage-large" id="dashboard-progress-percentage">0%</div>
+                <p class="progress-stats"><span id="dashboard-completed-count">0</span> / <span id="dashboard-total-count">0</span> Tasks Completed</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="dashboard-progress-fill"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Study Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">⏰</div>
+                <p class="stat-label">Total Study Hours</p>
+                <p class="stat-value" id="total-hours">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <p class="stat-label">Completed Hours</p>
+                <p class="stat-value" id="completed-hours">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📖</div>
+                <p class="stat-label">Remaining Hours</p>
+                <p class="stat-value" id="remaining-hours">0</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <p class="stat-label">Total Tasks</p>
+                <p class="stat-value" id="total-tasks">0</p>
+            </div>
+        </div>
+
+        <!-- Subject Progress -->
+        <div class="subject-progress-section">
+            <h3>� Subject Progress</h3>
+            <div id="subject-progress-container">
+            </div>
+        </div>
+
+        <!-- Study Profile -->
+        <div class="profile-section">
+            <h3>🎯 Your Study Profile</h3>
+            <div class="profile-details">
+                <p><strong>Level:</strong> {{ form_data.level }}</p>
+                <p><strong>Weak Subjects:</strong> {{ ", ".join(form_data.weak_subjects) if form_data.weak_subjects else "None" }}</p>
+                <p><strong>Strong Subjects:</strong> {{ ", ".join(form_data.strong_subjects) if form_data.strong_subjects else "None" }}</p>
+                <p><strong>Preference:</strong> {{ form_data.study_preference }}</p>
+            </div>
+        </div>
+
+        <!-- AI Summary -->
+        <div class="summary-section">
+            <h3>🤖 AI Study Summary</h3>
+            <div id="ai-summary-content">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AI STUDY PLAN -->
+
+    <div class="plan-section">
+
+        <h2>📅 Full Study Plan</h2>
+
+        <div class="progress-container">
+            <div class="progress-header">
+                <span class="progress-text">Progress: <span id="progress-percentage">0%</span></span>
+                <span class="progress-text">Completed: <span id="completed-count">0</span> / <span id="total-count">0</span></span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <p class="plan-info">
+            Your personalized plan is ready! 🎯
+        </p>
+
+
+        {% for item in plan %}
+
+        <div class="card" data-date="{{ item.date }}" data-id="{{ loop.index0 }}" data-subject="{{ item.subject }}" data-hours="{{ item.hours }}">
+
+            <div class="date">
+                📅 {{ item.date }}
+            </div>
+
+            <div class="today-badge" id="today-badge-{{ loop.index0 }}" style="display: none;">
+                ⭐ TODAY'S TASK
+            </div>
+
+            <h3>
+                📚 {{ item.subject }}
+            </h3>
+
+
+            <p>
+                ⏰ <strong>Study Time:</strong>
+                {{ item.hours }} hours
+            </p>
+
+
+            <p>
+                📝 <strong>Task:</strong>
+                {{ item.task }}
+            </p>
+
+            <div class="checkbox-container">
+                <input type="checkbox" class="task-checkbox" id="checkbox-{{ loop.index0 }}" data-index="{{ loop.index0 }}">
+                <label for="checkbox-{{ loop.index0 }}">Mark as completed</label>
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% endif %}
+
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.task-checkbox');
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const completedCount = document.getElementById('completed-count');
+        const totalCount = document.getElementById('total-count');
+        const cards = document.querySelectorAll('.card');
+
+        const totalTasks = checkboxes.length;
+        totalCount.textContent = totalTasks;
+
+        const STORAGE_KEY = 'study_plan_progress';
+        const PLAN_KEY = 'study_plan_id';
+
+        function getPlanId() {
+            const examDate = document.getElementById('dashboard-exam-date')?.textContent || '';
+            const subjects = Array.from(cards).map(card => card.getAttribute('data-subject')).join(',');
+            return `${examDate}_${subjects}`;
+        }
+
+        function loadProgress() {
+            const planId = getPlanId();
+            const storageKey = `${STORAGE_KEY}_${planId}`;
+            const savedProgress = localStorage.getItem(storageKey);
+            if (savedProgress) {
+                const progressData = JSON.parse(savedProgress);
+                checkboxes.forEach(checkbox => {
+                    const index = checkbox.getAttribute('data-index');
+                    if (progressData[index]) {
+                        checkbox.checked = true;
+                        const card = checkbox.closest('.card');
+                        card.classList.add('completed');
+                    }
+                });
+            }
+            updateDashboard();
+        }
+
+        function saveProgress() {
+            const planId = getPlanId();
+            const storageKey = `${STORAGE_KEY}_${planId}`;
+            const progressData = {};
+            checkboxes.forEach(checkbox => {
+                const index = checkbox.getAttribute('data-index');
+                progressData[index] = checkbox.checked;
+            });
+            localStorage.setItem(storageKey, JSON.stringify(progressData));
+        }
+
+        function updateProgress() {
+            const completed = document.querySelectorAll('.task-checkbox:checked').length;
+            const percentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+            progressPercentage.textContent = percentage + '%';
+            completedCount.textContent = completed;
+            progressFill.style.width = percentage + '%';
+        }
+
+        function updateDashboard() {
+            updateProgress();
+            updateDashboardProgress();
+            updateStatistics();
+            updateSubjectProgress();
+            updateTodayTask();
+            updateExamCountdown();
+            generateAISummary();
+        }
+
+        function updateDashboardProgress() {
+            const completed = document.querySelectorAll('.task-checkbox:checked').length;
+            const percentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+            const dashboardProgressPercentage = document.getElementById('dashboard-progress-percentage');
+            const dashboardCompletedCount = document.getElementById('dashboard-completed-count');
+            const dashboardTotalCount = document.getElementById('dashboard-total-count');
+            const dashboardProgressFill = document.getElementById('dashboard-progress-fill');
+
+            if (dashboardProgressPercentage) {
+                dashboardProgressPercentage.textContent = percentage + '%';
+            }
+            if (dashboardCompletedCount) {
+                dashboardCompletedCount.textContent = completed;
+            }
+            if (dashboardTotalCount) {
+                dashboardTotalCount.textContent = totalTasks;
+            }
+            if (dashboardProgressFill) {
+                dashboardProgressFill.style.width = percentage + '%';
+            }
+        }
+
+        function updateStatistics() {
+            let totalHours = 0;
+            let completedHours = 0;
+
+            cards.forEach(card => {
+                const hours = parseInt(card.getAttribute('data-hours')) || 0;
+                const checkbox = card.querySelector('.task-checkbox');
+                totalHours += hours;
+                if (checkbox && checkbox.checked) {
+                    completedHours += hours;
+                }
+            });
+
+            const remainingHours = totalHours - completedHours;
+
+            const totalHoursEl = document.getElementById('total-hours');
+            const completedHoursEl = document.getElementById('completed-hours');
+            const remainingHoursEl = document.getElementById('remaining-hours');
+            const totalTasksEl = document.getElementById('total-tasks');
+
+            if (totalHoursEl) totalHoursEl.textContent = totalHours + ' hours';
+            if (completedHoursEl) completedHoursEl.textContent = completedHours + ' hours';
+            if (remainingHoursEl) remainingHoursEl.textContent = remainingHours + ' hours';
+            if (totalTasksEl) totalTasksEl.textContent = totalTasks;
+        }
+
+        function updateSubjectProgress() {
+            const subjectProgressContainer = document.getElementById('subject-progress-container');
+            if (!subjectProgressContainer) return;
+
+            const subjectData = {};
+
+            cards.forEach(card => {
+                const subject = card.getAttribute('data-subject');
+                const hours = parseInt(card.getAttribute('data-hours')) || 0;
+                const checkbox = card.querySelector('.task-checkbox');
+
+                if (!subjectData[subject]) {
+                    subjectData[subject] = {
+                        total: 0,
+                        completed: 0,
+                        hours: 0
+                    };
+                }
+
+                subjectData[subject].total += 1;
+                subjectData[subject].hours += hours;
+
+                if (checkbox && checkbox.checked) {
+                    subjectData[subject].completed += 1;
+                }
+            });
+
+            let html = '';
+            for (const [subject, data] of Object.entries(subjectData)) {
+                const percentage = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+                const barLength = Math.floor(percentage / 10);
+                const bar = '█'.repeat(barLength) + '░'.repeat(10 - barLength);
+
+                html += `
+                    <div class="subject-progress-item">
+                        <div class="subject-info">
+                            <span class="subject-name">${subject}</span>
+                            <span class="subject-stats">${data.completed} / ${data.total} tasks completed</span>
+                        </div>
+                        <div class="subject-percentage">${percentage}%</div>
+                        <div class="subject-bar">${bar}</div>
+                        <div class="subject-hours">${data.hours} study hours</div>
+                    </div>
+                `;
+            }
+
+            subjectProgressContainer.innerHTML = html;
+        }
+
+        function updateTodayTask() {
+            const todayTaskContent = document.getElementById('today-task-content');
+            if (!todayTaskContent) return;
+
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const todayString = `${day}-${month}-${year}`;
+
+            let todayCard = null;
+            cards.forEach(card => {
+                const cardDate = card.getAttribute('data-date');
+                if (cardDate === todayString) {
+                    todayCard = card;
+                }
+            });
+
+            if (todayCard) {
+                const subject = todayCard.getAttribute('data-subject');
+                const hours = todayCard.getAttribute('data-hours');
+                const task = todayCard.querySelector('p:last-of-type')?.textContent.replace('📝 Task: ', '') || '';
+                const checkbox = todayCard.querySelector('.task-checkbox');
+                const isCompleted = checkbox && checkbox.checked;
+
+                todayTaskContent.innerHTML = `
+                    <p class="today-subject">${subject}</p>
+                    <p class="today-hours">⏰ ${hours} hours</p>
+                    <p class="today-task-text">${task}</p>
+                    ${isCompleted ? '<p class="today-completed">✅ Completed</p>' : ''}
+                `;
+            } else {
+                todayTaskContent.innerHTML = '<p class="no-task-message">No study task scheduled for today.</p>';
+            }
+        }
+
+        function updateExamCountdown() {
+            const countdownDays = document.getElementById('countdown-days');
+            const examDateEl = document.getElementById('dashboard-exam-date');
+            if (!countdownDays || !examDateEl) return;
+
+            const examDateStr = examDateEl.textContent;
+            if (!examDateStr) {
+                countdownDays.textContent = '--';
+                return;
+            }
+
+            const [day, month, year] = examDateStr.split('-').map(Number);
+            const examDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const diffTime = examDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                countdownDays.textContent = 'Passed';
+            } else if (diffDays === 0) {
+                countdownDays.textContent = 'Today';
+            } else {
+                countdownDays.textContent = diffDays;
+            }
+        }
+
+        function generateAISummary() {
+            const summaryContent = document.getElementById('ai-summary-content');
+            if (!summaryContent) return;
+
+            const level = document.querySelector('.profile-details p:nth-child(1)')?.textContent.replace('Level: ', '') || '';
+            const weakSubjects = document.querySelector('.profile-details p:nth-child(2)')?.textContent.replace('Weak Subjects: ', '') || '';
+            const strongSubjects = document.querySelector('.profile-details p:nth-child(3)')?.textContent.replace('Strong Subjects: ', '') || '';
+            const preference = document.querySelector('.profile-details p:nth-child(4)')?.textContent.replace('Preference: ', '') || '';
+
+            const completed = document.querySelectorAll('.task-checkbox:checked').length;
+            const percentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+            let summary = `<p>You have ${totalTasks} study sessions planned for your upcoming exam.</p>`;
+
+            if (weakSubjects && weakSubjects !== 'None') {
+                summary += `<p>Your main focus should be ${weakSubjects} because they are your weak subjects.</p>`;
+            }
+
+            if (strongSubjects && strongSubjects !== 'None') {
+                summary += `<p>${strongSubjects} is currently your strong subject, so the plan gives it lighter revision sessions.</p>`;
+            }
+
+            summary += `<p>Your ${level} level and ${preference} preference have been considered while creating the plan.</p>`;
+
+            if (percentage > 0) {
+                summary += `<p>You have completed ${percentage}% of your study plan. Keep up the great work!</p>`;
+            }
+
+            summaryContent.innerHTML = summary;
+        }
+
+        function highlightTodayTask() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const todayString = `${day}-${month}-${year}`;
+
+            cards.forEach(card => {
+                const cardDate = card.getAttribute('data-date');
+                const index = card.getAttribute('data-id');
+                const badge = document.getElementById(`today-badge-${index}`);
+
+                if (cardDate === todayString) {
+                    card.classList.add('today-task');
+                    if (badge) {
+                        badge.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const card = this.closest('.card');
+                if (this.checked) {
+                    card.classList.add('completed');
+                } else {
+                    card.classList.remove('completed');
+                }
+                saveProgress();
+                updateDashboard();
+            });
+        });
+
+        loadProgress();
+        highlightTodayTask();
+    });
+</script>
+
+</body>
+
+</html>
