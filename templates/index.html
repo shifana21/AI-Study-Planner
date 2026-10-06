@@ -29,7 +29,7 @@
 
     <!-- STUDY PLAN FORM -->
 
-    <form method="POST">
+    <form method="POST" aria-label="Study Plan Generation Form">
 
         <label for="subjects">
             Subjects
@@ -41,7 +41,10 @@
             name="subjects"
             placeholder="Java, DBMS, Python"
             required
+            aria-required="true"
+            aria-describedby="subjects-help"
         >
+        <small id="subjects-help" class="form-help">Enter subjects separated by commas</small>
 
 
         <label for="exam_date">
@@ -53,6 +56,7 @@
             id="exam_date"
             name="exam_date"
             required
+            aria-required="true"
         >
 
 
@@ -68,7 +72,10 @@
             max="12"
             placeholder="3"
             required
+            aria-required="true"
+            aria-describedby="hours-help"
         >
+        <small id="hours-help" class="form-help">Enter hours between 1 and 12</small>
 
 
         <label for="level">
@@ -79,6 +86,7 @@
             id="level"
             name="level"
             required
+            aria-required="true"
         >
             <option value="Beginner">Beginner</option>
             <option value="Intermediate">Intermediate</option>
@@ -95,7 +103,9 @@
             id="weak_subjects"
             name="weak_subjects"
             placeholder="Example: Java, DBMS"
+            aria-describedby="weak-help"
         >
+        <small id="weak-help" class="form-help">Subjects you find difficult</small>
 
 
         <label for="strong_subjects">
@@ -107,7 +117,9 @@
             id="strong_subjects"
             name="strong_subjects"
             placeholder="Example: Python"
+            aria-describedby="strong-help"
         >
+        <small id="strong-help" class="form-help">Subjects you are confident in</small>
 
 
         <label for="study_preference">
@@ -118,6 +130,7 @@
             id="study_preference"
             name="study_preference"
             required
+            aria-required="true"
         >
             <option value="Mixed" selected>Mixed</option>
             <option value="Theory">Theory</option>
@@ -126,11 +139,20 @@
         </select>
 
 
-        <button type="submit">
+        <button type="submit" id="generate-btn" aria-label="Generate Study Plan">
             ✨ Generate Study Plan
         </button>
+        <div id="loading-message" style="display: none; text-align: center; margin-top: 20px;" role="status" aria-live="polite">
+            <p>🤖 Creating your personalized study plan...</p>
+        </div>
 
     </form>
+
+    {% if error_message %}
+    <div class="error-message">
+        {{ error_message }}
+    </div>
+    {% endif %}
 
 
     <!-- STUDY DASHBOARD -->
@@ -176,6 +198,66 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Readiness Score -->
+        <div class="readiness-section">
+            <h3>🎯 Exam Readiness Score</h3>
+            <div class="readiness-card">
+                <div class="readiness-score" id="readiness-score">--%</div>
+                <div class="readiness-status" id="readiness-status">--</div>
+                <p class="readiness-description" id="readiness-description">Generate a study plan to see your readiness score.</p>
+            </div>
+        </div>
+
+        <!-- Recommended Next Task -->
+        <div class="next-task-section">
+            <h3>⭐ Recommended Next Task</h3>
+            <div class="next-task-card" id="next-task-card">
+                <p class="no-task-message">Complete some tasks to get recommendations.</p>
+            </div>
+        </div>
+
+        <!-- Missed Tasks -->
+        <div class="missed-tasks-section">
+            <h3>⚠️ Missed / Pending Tasks</h3>
+            <div id="missed-tasks-container">
+                <p class="no-task-message">🎉 No missed tasks! You're completely caught up.</p>
+            </div>
+        </div>
+
+        <!-- Catch-Up Plan -->
+        <div class="catchup-section" id="catchup-section" style="display: none;">
+            <h3>🔄 Catch-Up Plan</h3>
+            <div class="catchup-card" id="catchup-card">
+            </div>
+        </div>
+
+        <!-- Study Streak -->
+        <div class="streak-section">
+            <h3>🔥 Study Streak</h3>
+            <div class="streak-card">
+                <div class="streak-icon">🔥</div>
+                <div class="streak-number" id="current-streak">0</div>
+                <p class="streak-label">Day Study Streak</p>
+                <p class="best-streak">Best Streak: <span id="best-streak">0</span> days</p>
+            </div>
+        </div>
+
+        <!-- Smart AI Recommendations -->
+        <div class="recommendations-section">
+            <h3>🤖 Smart AI Recommendations</h3>
+            <div id="recommendations-content">
+                <p>Generate a study plan to get personalized recommendations.</p>
+            </div>
+        </div>
+
+        <!-- AI Performance Analysis -->
+        <div class="performance-section">
+            <h3>📊 AI Performance Analysis</h3>
+            <div id="performance-content">
+                <p>Complete some tasks to see your performance analysis.</p>
+            </div>
         </div>
 
         <!-- Study Statistics -->
@@ -235,6 +317,42 @@
 
         <h2>📅 Full Study Plan</h2>
 
+        <div class="controls-row">
+            <!-- Search -->
+            <div class="search-container">
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="🔍 Search tasks..."
+                    aria-label="Search study tasks"
+                >
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-container">
+                <select id="status-filter" aria-label="Filter by status">
+                    <option value="all">All Status</option>
+                    <option value="today">Today</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="missed">Missed</option>
+                </select>
+
+                <select id="subject-filter" aria-label="Filter by subject">
+                    <option value="all">All Subjects</option>
+                </select>
+            </div>
+
+            <!-- Actions -->
+            <div class="action-buttons">
+                <button type="button" id="export-btn" class="action-btn">📥 Export CSV</button>
+                <button type="button" id="print-btn" class="action-btn">🖨️ Print Plan</button>
+                <button type="button" id="dark-mode-btn" class="action-btn">🌙 Dark Mode</button>
+                <button type="button" id="reset-btn" class="action-btn reset-btn">🔄 Reset Progress</button>
+            </div>
+        </div>
+
         <div class="progress-container">
             <div class="progress-header">
                 <span class="progress-text">Progress: <span id="progress-percentage">0%</span></span>
@@ -279,7 +397,7 @@
             </p>
 
             <div class="checkbox-container">
-                <input type="checkbox" class="task-checkbox" id="checkbox-{{ loop.index0 }}" data-index="{{ loop.index0 }}">
+                <input type="checkbox" class="task-checkbox" id="checkbox-{{ loop.index0 }}" data-index="{{ loop.index0 }}" aria-label="Mark task as completed">
                 <label for="checkbox-{{ loop.index0 }}">Mark as completed</label>
             </div>
 
@@ -307,16 +425,20 @@
         totalCount.textContent = totalTasks;
 
         const STORAGE_KEY = 'study_plan_progress';
-        const PLAN_KEY = 'study_plan_id';
+        const DARK_MODE_KEY = 'dark_mode_preference';
+
+        let subjectProgressData = {};
 
         function getPlanId() {
             const examDate = document.getElementById('dashboard-exam-date')?.textContent || '';
-            const subjects = Array.from(cards).map(card => card.getAttribute('data-subject')).join(',');
+            const subjects = Array.from(cards).map(card => card.getAttribute('data-subject')).sort().join(',');
             return `${examDate}_${subjects}`;
         }
 
         function loadProgress() {
-            const planId = getPlanId();
+            const planId = localStorage.getItem('current_plan_id');
+            if (!planId) return;
+
             const storageKey = `${STORAGE_KEY}_${planId}`;
             const savedProgress = localStorage.getItem(storageKey);
             if (savedProgress) {
@@ -334,7 +456,9 @@
         }
 
         function saveProgress() {
-            const planId = getPlanId();
+            const planId = localStorage.getItem('current_plan_id');
+            if (!planId) return;
+
             const storageKey = `${STORAGE_KEY}_${planId}`;
             const progressData = {};
             checkboxes.forEach(checkbox => {
@@ -360,7 +484,13 @@
             updateSubjectProgress();
             updateTodayTask();
             updateExamCountdown();
+            updateReadinessScore();
+            updateNextTask();
+            updateMissedTasks();
+            updateStudyStreak();
+            updatePerformanceAnalysis();
             generateAISummary();
+            populateSubjectFilter();
         }
 
         function updateDashboardProgress() {
@@ -416,34 +546,50 @@
             const subjectProgressContainer = document.getElementById('subject-progress-container');
             if (!subjectProgressContainer) return;
 
-            const subjectData = {};
+            subjectProgressData = {};
 
             cards.forEach(card => {
                 const subject = card.getAttribute('data-subject');
                 const hours = parseInt(card.getAttribute('data-hours')) || 0;
                 const checkbox = card.querySelector('.task-checkbox');
 
-                if (!subjectData[subject]) {
-                    subjectData[subject] = {
+                if (!subjectProgressData[subject]) {
+                    subjectProgressData[subject] = {
                         total: 0,
                         completed: 0,
                         hours: 0
                     };
                 }
 
-                subjectData[subject].total += 1;
-                subjectData[subject].hours += hours;
+                subjectProgressData[subject].total += 1;
+                subjectProgressData[subject].hours += hours;
 
                 if (checkbox && checkbox.checked) {
-                    subjectData[subject].completed += 1;
+                    subjectProgressData[subject].completed += 1;
                 }
             });
 
             let html = '';
-            for (const [subject, data] of Object.entries(subjectData)) {
+            for (const [subject, data] of Object.entries(subjectProgressData)) {
                 const percentage = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
                 const barLength = Math.floor(percentage / 10);
                 const bar = '█'.repeat(barLength) + '░'.repeat(10 - barLength);
+
+                let status = '';
+                let statusClass = '';
+                if (percentage >= 80) {
+                    status = '🟢 Strong';
+                    statusClass = 'status-strong';
+                } else if (percentage >= 60) {
+                    status = '🟡 Good';
+                    statusClass = 'status-good';
+                } else if (percentage >= 40) {
+                    status = '🟠 Needs Attention';
+                    statusClass = 'status-attention';
+                } else {
+                    status = '🔴 Critical';
+                    statusClass = 'status-critical';
+                }
 
                 html += `
                     <div class="subject-progress-item">
@@ -452,6 +598,7 @@
                             <span class="subject-stats">${data.completed} / ${data.total} tasks completed</span>
                         </div>
                         <div class="subject-percentage">${percentage}%</div>
+                        <div class="subject-status ${statusClass}">${status}</div>
                         <div class="subject-bar">${bar}</div>
                         <div class="subject-hours">${data.hours} study hours</div>
                     </div>
@@ -523,6 +670,257 @@
             } else {
                 countdownDays.textContent = diffDays;
             }
+
+            return diffDays;
+        }
+
+        function updateReadinessScore() {
+            const readinessScore = document.getElementById('readiness-score');
+            const readinessStatus = document.getElementById('readiness-status');
+            const readinessDescription = document.getElementById('readiness-description');
+
+            if (!readinessScore) return;
+
+            const completed = document.querySelectorAll('.task-checkbox:checked').length;
+            const overallPercentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+            let subjectScore = 0;
+            let subjectCount = 0;
+            for (const [subject, data] of Object.entries(subjectProgressData)) {
+                const percentage = data.total > 0 ? (data.completed / data.total) * 100 : 0;
+                subjectScore += percentage;
+                subjectCount++;
+            }
+            const avgSubjectScore = subjectCount > 0 ? subjectScore / subjectCount : 0;
+
+            const diffDays = updateExamCountdown() || 30;
+            const daysFactor = diffDays >= 14 ? 1 : diffDays >= 7 ? 0.9 : 0.8;
+
+            const readinessScoreValue = Math.round((overallPercentage * 0.5 + avgSubjectScore * 0.3 + daysFactor * 20));
+
+            let status = '';
+            let description = '';
+
+            if (readinessScoreValue >= 90) {
+                status = 'Excellent Preparation';
+                description = 'You are very well prepared for your exam. Keep up the excellent work!';
+            } else if (readinessScoreValue >= 75) {
+                status = 'Well Prepared';
+                description = 'You have good preparation. Focus on revision and practice tests.';
+            } else if (readinessScoreValue >= 60) {
+                status = 'Good Progress';
+                description = 'You are making good progress. Stay consistent and focus on weak areas.';
+            } else if (readinessScoreValue >= 40) {
+                status = 'Getting Started';
+                description = 'You are building momentum. Increase your study consistency.';
+            } else {
+                status = 'Needs Improvement';
+                description = 'Focus on completing daily tasks and building a study routine.';
+            }
+
+            readinessScore.textContent = readinessScoreValue + '%';
+            readinessStatus.textContent = status;
+            readinessDescription.textContent = description;
+        }
+
+        function updateNextTask() {
+            const nextTaskCard = document.getElementById('next-task-card');
+            if (!nextTaskCard) return;
+
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const todayString = `${day}-${month}-${year}`;
+
+            const weakSubjectsText = document.querySelector('.profile-details p:nth-child(2)')?.textContent.replace('Weak Subjects: ', '') || '';
+
+            let nextTask = null;
+            let highestPriority = 0;
+
+            cards.forEach(card => {
+                const checkbox = card.querySelector('.task-checkbox');
+                if (checkbox && !checkbox.checked) {
+                    const cardDate = card.getAttribute('data-date');
+                    const subject = card.getAttribute('data-subject');
+                    const hours = card.getAttribute('data-hours');
+                    const task = card.querySelector('p:last-of-type')?.textContent.replace('📝 Task: ', '') || '';
+
+                    let priority = 0;
+                    if (cardDate === todayString) priority += 10;
+                    if (weakSubjectsText.includes(subject)) priority += 5;
+                    if (cardDate < todayString) priority += 8;
+
+                    if (priority > highestPriority) {
+                        highestPriority = priority;
+                        nextTask = { subject, hours, task, date: cardDate };
+                    }
+                }
+            });
+
+            if (nextTask) {
+                const priorityLevel = highestPriority >= 10 ? 'HIGH' : highestPriority >= 5 ? 'MEDIUM' : 'LOW';
+                const reason = nextTask.date === todayString ? 'This is today\'s scheduled task.' :
+                               weakSubjectsText.includes(nextTask.subject) ? 'This is a weak subject that needs attention.' :
+                               'This is the next upcoming task in your plan.';
+
+                nextTaskCard.innerHTML = `
+                    <p class="next-task-subject">${nextTask.subject}</p>
+                    <p class="next-task-task">${nextTask.task}</p>
+                    <p class="next-task-hours">⏰ ${nextTask.hours} hours</p>
+                    <p class="next-task-priority">🎯 Priority: ${priorityLevel}</p>
+                    <p class="next-task-reason">Reason: ${reason}</p>
+                `;
+            } else {
+                nextTaskCard.innerHTML = '<p class="no-task-message">🎉 All tasks completed! Great job!</p>';
+            }
+        }
+
+        function updateMissedTasks() {
+            const missedTasksContainer = document.getElementById('missed-tasks-container');
+            const catchupSection = document.getElementById('catchup-section');
+            if (!missedTasksContainer) return;
+
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const todayString = `${day}-${month}-${year}`;
+
+            const missedTasks = [];
+            cards.forEach(card => {
+                const checkbox = card.querySelector('.task-checkbox');
+                const cardDate = card.getAttribute('data-date');
+                if (checkbox && !checkbox.checked && cardDate < todayString) {
+                    missedTasks.push({
+                        date: cardDate,
+                        subject: card.getAttribute('data-subject'),
+                        hours: card.getAttribute('data-hours'),
+                        task: card.querySelector('p:last-of-type')?.textContent.replace('📝 Task: ', '') || ''
+                    });
+                }
+            });
+
+            if (missedTasks.length === 0) {
+                missedTasksContainer.innerHTML = '<p class="no-task-message">🎉 No missed tasks! You\'re completely caught up.</p>';
+                if (catchupSection) catchupSection.style.display = 'none';
+            } else {
+                let html = `<p class="missed-count">${missedTasks.length} missed tasks</p>`;
+                missedTasks.forEach(task => {
+                    html += `
+                        <div class="missed-task-item">
+                            <p><strong>📅 ${task.date}</strong></p>
+                            <p><strong>📚 ${task.subject}</strong> - ${task.hours} hours</p>
+                            <p>📝 ${task.task}</p>
+                        </div>
+                    `;
+                });
+                missedTasksContainer.innerHTML = html;
+
+                if (catchupSection) {
+                    catchupSection.style.display = 'block';
+                    updateCatchUpPlan(missedTasks);
+                }
+            }
+        }
+
+        function updateCatchUpPlan(missedTasks) {
+            const catchupCard = document.getElementById('catchup-card');
+            if (!catchupCard) return;
+
+            const totalMissedHours = missedTasks.reduce((sum, task) => sum + parseInt(task.hours), 0);
+            const daysToCatchUp = Math.ceil(totalMissedHours / 3);
+
+            let html = `<p>You have ${missedTasks.length} missed tasks totaling ${totalMissedHours} hours.</p>`;
+            html += `<p><strong>Recommended catch-up:</strong></p>`;
+            html += `<p>Spread the missed work over ${daysToCatchUp} days:</p>`;
+            html += `<ul>`;
+            html += `<li>Each day: Complete ${Math.round(totalMissedHours / daysToCatchUp)} hours of missed tasks</li>`;
+            html += `<li>Focus on weak subjects first</li>`;
+            html += `<li>Don't exceed your daily study hours significantly</li>`;
+            html += `</ul>`;
+
+            catchupCard.innerHTML = html;
+        }
+
+        function updateStudyStreak() {
+            const currentStreakEl = document.getElementById('current-streak');
+            const bestStreakEl = document.getElementById('best-streak');
+            if (!currentStreakEl || !bestStreakEl) return;
+
+            const completedDates = new Set();
+            cards.forEach(card => {
+                const checkbox = card.querySelector('.task-checkbox');
+                if (checkbox && checkbox.checked) {
+                    completedDates.add(card.getAttribute('data-date'));
+                }
+            });
+
+            if (completedDates.size === 0) {
+                currentStreakEl.textContent = '0';
+                bestStreakEl.textContent = '0';
+                return;
+            }
+
+            const sortedDates = Array.from(completedDates).sort();
+            let currentStreak = 0;
+            let bestStreak = 0;
+            let tempStreak = 1;
+
+            for (let i = 1; i < sortedDates.length; i++) {
+                const prevDate = new Date(sortedDates[i - 1].split('-').reverse().join('-'));
+                const currDate = new Date(sortedDates[i].split('-').reverse().join('-'));
+                const diffDays = (currDate - prevDate) / (1000 * 60 * 60 * 24);
+
+                if (diffDays === 1) {
+                    tempStreak++;
+                } else {
+                    bestStreak = Math.max(bestStreak, tempStreak);
+                    tempStreak = 1;
+                }
+            }
+            bestStreak = Math.max(bestStreak, tempStreak);
+
+            currentStreakEl.textContent = currentStreak;
+            bestStreakEl.textContent = bestStreak;
+        }
+
+        function updatePerformanceAnalysis() {
+            const performanceContent = document.getElementById('performance-content');
+            if (!performanceContent) return;
+
+            const completed = document.querySelectorAll('.task-checkbox:checked').length;
+            const percentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
+
+            let strongestSubject = 'N/A';
+            let weakestSubject = 'N/A';
+            let highestCompletion = 0;
+            let lowestCompletion = 100;
+
+            for (const [subject, data] of Object.entries(subjectProgressData)) {
+                const completion = data.total > 0 ? (data.completed / data.total) * 100 : 0;
+                if (completion > highestCompletion) {
+                    highestCompletion = completion;
+                    strongestSubject = subject;
+                }
+                if (completion < lowestCompletion && data.total > 0) {
+                    lowestCompletion = completion;
+                    weakestSubject = subject;
+                }
+            }
+
+            const remainingTasks = totalTasks - completed;
+
+            let html = `<p>Your preparation is currently ${percentage}% complete.</p>`;
+            if (strongestSubject !== 'N/A') {
+                html += `<p>Python is your strongest subject.</p>`;
+            }
+            if (weakestSubject !== 'N/A') {
+                html += `<p>${weakestSubject} needs more attention because only ${Math.round(lowestCompletion)}% of its planned tasks are completed.</p>`;
+            }
+            html += `<p>You have ${remainingTasks} study sessions remaining before the exam.</p>`;
+
+            performanceContent.innerHTML = html;
         }
 
         function generateAISummary() {
@@ -537,7 +935,9 @@
             const completed = document.querySelectorAll('.task-checkbox:checked').length;
             const percentage = totalTasks > 0 ? Math.round((completed / totalTasks) * 100) : 0;
 
-            let summary = `<p>You have ${totalTasks} study sessions planned for your upcoming exam.</p>`;
+            const diffDays = updateExamCountdown() || 30;
+
+            let summary = `<p>You have ${totalTasks} study sessions planned for your upcoming exam (${diffDays} days remaining).</p>`;
 
             if (weakSubjects && weakSubjects !== 'None') {
                 summary += `<p>Your main focus should be ${weakSubjects} because they are your weak subjects.</p>`;
@@ -556,10 +956,212 @@
             summaryContent.innerHTML = summary;
         }
 
+        function populateSubjectFilter() {
+            const subjectFilter = document.getElementById('subject-filter');
+            if (!subjectFilter) return;
+
+            const subjects = [...new Set(Array.from(cards).map(card => card.getAttribute('data-subject')))];
+            subjectFilter.innerHTML = '<option value="all">All Subjects</option>';
+            subjects.forEach(subject => {
+                subjectFilter.innerHTML += `<option value="${subject}">${subject}</option>`;
+            });
+        }
+
         function highlightTodayTask() {
             const today = new Date();
             const day = String(today.getDate()).padStart(2, '0');
             const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const todayString = `${day}-${month}-${year}`;
+
+            cards.forEach(card => {
+                const cardDate = card.getAttribute('data-date');
+                const index = card.getAttribute('data-id');
+                const badge = document.getElementById(`today-badge-${index}`);
+
+                if (cardDate === todayString) {
+                    card.classList.add('today-task');
+                    if (badge) {
+                        badge.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('status-filter')?.value || 'all';
+            const subjectFilter = document.getElementById('subject-filter')?.value || 'all';
+            const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            const todayString = `${day}-${month}-${year}`;
+
+            cards.forEach(card => {
+                const cardDate = card.getAttribute('data-date');
+                const subject = card.getAttribute('data-subject');
+                const task = card.querySelector('p:last-of-type')?.textContent.toLowerCase() || '';
+                const checkbox = card.querySelector('.task-checkbox');
+                const isCompleted = checkbox && checkbox.checked;
+
+                let visible = true;
+
+                if (statusFilter === 'today' && cardDate !== todayString) visible = false;
+                if (statusFilter === 'upcoming' && cardDate <= todayString) visible = false;
+                if (statusFilter === 'completed' && !isCompleted) visible = false;
+                if (statusFilter === 'pending' && isCompleted) visible = false;
+                if (statusFilter === 'missed' && cardDate >= todayString) visible = false;
+
+                if (subjectFilter !== 'all' && subject !== subjectFilter) visible = false;
+
+                if (searchTerm && !subject.toLowerCase().includes(searchTerm) && !task.includes(searchTerm) && !cardDate.includes(searchTerm)) {
+                    visible = false;
+                }
+
+                card.style.display = visible ? 'block' : 'none';
+            });
+        }
+
+        function exportToCSV() {
+            const rows = [['Date', 'Subject', 'Hours', 'Task', 'Status']];
+
+            cards.forEach(card => {
+                const date = card.getAttribute('data-date');
+                const subject = card.getAttribute('data-subject');
+                const hours = card.getAttribute('data-hours');
+                const task = card.querySelector('p:last-of-type')?.textContent.replace('📝 Task: ', '') || '';
+                const checkbox = card.querySelector('.task-checkbox');
+                const status = checkbox && checkbox.checked ? 'Completed' : 'Pending';
+
+                rows.push([date, subject, hours, task, status]);
+            });
+
+            const csvContent = rows.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'study_plan.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function printPlan() {
+            window.print();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem(DARK_MODE_KEY, isDarkMode);
+        }
+
+        function loadDarkMode() {
+            const isDarkMode = localStorage.getItem(DARK_MODE_KEY) === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+            }
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset your study progress? This cannot be undone.')) {
+                const planId = localStorage.getItem('current_plan_id');
+                if (planId) {
+                    const storageKey = `${STORAGE_KEY}_${planId}`;
+                    localStorage.removeItem(storageKey);
+
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = false;
+                        const card = checkbox.closest('.card');
+                        card.classList.remove('completed');
+                    });
+
+                    updateDashboard();
+                }
+            }
+        }
+
+        function setupEventListeners() {
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const card = this.closest('.card');
+                    if (this.checked) {
+                        card.classList.add('completed');
+                    } else {
+                        card.classList.remove('completed');
+                    }
+                    saveProgress();
+                    updateDashboard();
+                });
+            });
+
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+            }
+
+            const statusFilter = document.getElementById('status-filter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', applyFilters);
+            }
+
+            const subjectFilter = document.getElementById('subject-filter');
+            if (subjectFilter) {
+                subjectFilter.addEventListener('change', applyFilters);
+            }
+
+            const exportBtn = document.getElementById('export-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportToCSV);
+            }
+
+            const printBtn = document.getElementById('print-btn');
+            if (printBtn) {
+                printBtn.addEventListener('click', printPlan);
+            }
+
+            const darkModeBtn = document.getElementById('dark-mode-btn');
+            if (darkModeBtn) {
+                darkModeBtn.addEventListener('click', toggleDarkMode);
+            }
+
+            const resetBtn = document.getElementById('reset-btn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', resetProgress);
+            }
+
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const generateBtn = document.getElementById('generate-btn');
+                    const loadingMessage = document.getElementById('loading-message');
+                    if (generateBtn) generateBtn.disabled = true;
+                    if (loadingMessage) loadingMessage.style.display = 'block';
+                });
+            }
+        }
+
+        function initialize() {
+            loadDarkMode();
+
+            if (checkboxes.length > 0) {
+                const existingPlanId = localStorage.getItem('current_plan_id');
+                if (!existingPlanId) {
+                    const planId = getPlanId();
+                    localStorage.setItem('current_plan_id', planId);
+                }
+                loadProgress();
+                highlightTodayTask();
+            }
+
+            setupEventListeners();
+        }
+
+        initialize();
+    });
+</script>
             const year = today.getFullYear();
             const todayString = `${day}-${month}-${year}`;
 

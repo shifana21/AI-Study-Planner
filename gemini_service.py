@@ -78,8 +78,6 @@ Use exactly this format:
 
     for model in models:
 
-        print(f"\nTrying Gemini model: {model}")
-
         for attempt in range(2):
 
             try:
@@ -94,10 +92,6 @@ Use exactly this format:
 
                 ai_text = response.text.strip()
 
-                print("\n===== GEMINI RESPONSE =====")
-                print(ai_text)
-                print("===========================\n")
-
                 # Remove markdown if Gemini adds it
                 ai_text = ai_text.replace("```json", "")
                 ai_text = ai_text.replace("```", "")
@@ -108,7 +102,6 @@ Use exactly this format:
                 end = ai_text.rfind("]")
 
                 if start == -1 or end == -1:
-                    print("Could not find JSON array.")
                     continue
 
                 ai_text = ai_text[start:end + 1]
@@ -117,19 +110,124 @@ Use exactly this format:
 
                 if isinstance(plan, list) and len(plan) > 0:
 
-                    print("AI PLAN GENERATED SUCCESSFULLY")
-
                     return plan
 
             except Exception as e:
 
-                print(
-                    f"Gemini Error ({model}, attempt {attempt + 1}):",
-                    e
-                )
-
                 time.sleep(2)
 
-    print("\nAll Gemini attempts failed.")
-
     return []
+
+
+def generate_recommendations(progress_data, subject_progress, weak_subjects, strong_subjects, level, preference, remaining_days):
+    """
+    Generate AI-powered study recommendations based on student progress.
+    Falls back to rule-based recommendations if Gemini fails.
+    """
+    weak_subjects_str = ", ".join(weak_subjects) if weak_subjects else "None"
+    strong_subjects_str = ", ".join(strong_subjects) if strong_subjects else "None"
+
+    prompt = f"""
+You are an AI study advisor.
+
+Based on the following student data, provide personalized study recommendations:
+
+Student Level: {level}
+Study Preference: {preference}
+Weak Subjects: {weak_subjects_str}
+Strong Subjects: {strong_subjects_str}
+Remaining Days Until Exam: {remaining_days}
+
+Progress Data:
+{json.dumps(progress_data, indent=2)}
+
+Subject Progress:
+{json.dumps(subject_progress, indent=2)}
+
+Provide 3-5 specific, actionable recommendations.
+
+Return ONLY valid JSON in this exact format:
+{{
+  "priority_subject": "Subject name",
+  "recommendations": [
+    "Recommendation 1",
+    "Recommendation 2",
+    "Recommendation 3"
+  ],
+  "strategy": "Overall strategy description",
+  "next_task_reason": "Reason for recommended next task"
+}}
+
+Do not use markdown.
+Do not add explanations.
+"""
+
+    models = [
+        "gemini-3.8-flash",
+        "gemini-3.7-flash",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash"
+    ]
+
+    for model in models:
+        try:
+            chat = client.chats.create(model=model)
+            response = chat.send_message(message=prompt)
+            ai_text = response.text.strip()
+
+            ai_text = ai_text.replace("```json", "")
+            ai_text = ai_text.replace("```", "")
+            ai_text = ai_text.strip()
+
+            start = ai_text.find("{")
+            end = ai_text.rfind("}")
+
+            if start == -1 or end == -1:
+                continue
+
+            ai_text = ai_text[start:end + 1]
+            recommendations = json.loads(ai_text)
+
+            if "recommendations" in recommendations:
+                return recommendations
+
+        except Exception as e:
+            time.sleep(1)
+
+    return get_rule_based_recommendations(progress_data, subject_progress, weak_subjects, strong_subjects, remaining_days)
+
+
+def get_rule_based_recommendations(progress_data, subject_progress, weak_subjects, strong_subjects, remaining_days):
+    """
+    Fallback rule-based recommendations when Gemini is unavailable.
+    """
+    recommendations = []
+    priority_subject = None
+
+    if weak_subjects and len(weak_subjects) > 0:
+        priority_subject = weak_subjects[0]
+        recommendations.append(f"🎯 Priority: Focus more on {priority_subject} because it's marked as a weak subject.")
+
+    if subject_progress:
+        for subject, data in subject_progress.items():
+            if data['total'] > 0:
+                completion_rate = (data['completed'] / data['total']) * 100
+                if completion_rate < 50 and subject in (weak_subjects or []):
+                    recommendations.append(f"📚 Revision: {subject} needs more attention with only {completion_rate:.0f}% completion.")
+                elif completion_rate > 80 and subject in (strong_subjects or []):
+                    recommendations.append(f"🔥 Strong Area: {subject} is progressing well. Maintain with short revision sessions.")
+
+    if remaining_days <= 7:
+        recommendations.append("⏰ Time Management: Exam is approaching. Focus on revision and practice tests.")
+    elif remaining_days <= 14:
+        recommendations.append("💻 Practice: Complete 2-3 practice problems daily to build confidence.")
+
+    if not recommendations:
+        recommendations.append("📝 Continue with your current study plan. You're making good progress!")
+
+    return {
+        "priority_subject": priority_subject or strong_subjects[0] if strong_subjects else "General",
+        "recommendations": recommendations,
+        "strategy": "Follow your study plan consistently and focus on weak areas.",
+        "next_task_reason": "Based on your current progress and subject priorities."
+    }
